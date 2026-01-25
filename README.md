@@ -33,6 +33,7 @@ medicare-hub-backend/
 ├── medical_records table
 ├── prescriptions table
 └── lab_results table
+'''text
 
 # AWS S3 Bucket:
 ├── reports/ (medical record PDFs)
