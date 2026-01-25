@@ -27,15 +27,17 @@ medicare-hub-backend/
 │       ├── UserResponse.java
 │       └── ApiResponse.java
 └── pom.xml (with PostgreSQL dependency)
-
+'''
+'''text
 # PostgreSQL Database:
 ├── users table
 ├── medical_records table
 ├── prescriptions table
 └── lab_results table
+'''
 '''text
-
 # AWS S3 Bucket:
 ├── reports/ (medical record PDFs)
 ├── prescriptions/ (prescription images)
 └── labs/ (lab report files)
+'''
