@@ -60,3 +60,4 @@ git pull origin main --rebase
 --rebase     what it does
 It moves your commits on top of the latest Github commits instead of creating 
 an extra "merge commit"
+```
