@@ -1,11 +1,13 @@
 package com.medicare.hub.controller;
 
-import com.medicare.hub.config.S3StorageService;
+import com.medicare.hub.service.S3StorageService;
 import com.medicare.hub.dto.ApiResponse;
 import com.medicare.hub.model.LabResult;
 import com.medicare.hub.model.MedicalRecord;
 import com.medicare.hub.model.Prescription;
-import com.medicare.hub.storage.InMemoryStorage;
+import com.medicare.hub.repository.LabResultRepository;
+import com.medicare.hub.repository.MedicalRecordRepository;
+import com.medicare.hub.repository.PrescriptionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -23,22 +25,24 @@ import java.util.UUID;
 @Slf4j
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:5173")
 @RequiredArgsConstructor
 public class MedicalController {
 
-    private final InMemoryStorage storage;
+    private final MedicalRecordRepository medicalRecordRepository;
+    private final PrescriptionRepository prescriptionRepository;
+    private final LabResultRepository labResultRepository;
     private final S3StorageService s3Service;
 
     @GetMapping("/patient/{patientId}/{type}/records")
-    ResponseEntity<?> getRecords(@PathVariable String patientId, @PathVariable String type) {
+    public ResponseEntity<?> getRecords(@PathVariable String patientId, @PathVariable String type) {
         log.info("📋 Fetching {} records for patient: {}", type, patientId);
 
         try {
             switch (type.toLowerCase()) {
                 case "medical":
-                    List<MedicalRecord> medicalRecords = storage
-                            .findMedicalRecordsByPatientIdAndCategory(patientId, "Medical Record");
+                    List<MedicalRecord> medicalRecords = medicalRecordRepository
+                            .findByPatientIdAndCategoryOrderByCreatedAtDesc(patientId, "Medical Record");
                     return ResponseEntity.ok(Map.of(
                             "success", true,
                             "count", medicalRecords.size(),
@@ -46,7 +50,7 @@ public class MedicalController {
                     ));
 
                 case "prescription":
-                    List<Prescription> prescriptions = storage.findPrescriptionsByPatientId(patientId);
+                    List<Prescription> prescriptions = prescriptionRepository.findByPatientIdOrderByCreatedAtDesc(patientId);
                     return ResponseEntity.ok(Map.of(
                             "success", true,
                             "count", prescriptions.size(),
@@ -54,7 +58,7 @@ public class MedicalController {
                     ));
 
                 case "lab":
-                    List<LabResult> labResults = storage.findLabResultsByPatientId(patientId);
+                    List<LabResult> labResults = labResultRepository.findByPatientIdOrderByCreatedAtDesc(patientId);
                     return ResponseEntity.ok(Map.of(
                             "success", true,
                             "count", labResults.size(),
@@ -110,7 +114,32 @@ public class MedicalController {
                         String s3Url = s3Service.uploadFile(prescriptionImage, "prescriptions");
                         medicalRecord.setPrescriptionPath(s3Url);
                     }
-                    storage.saveMedicalRecord(medicalRecord);
+                    medicalRecordRepository.save(medicalRecord);
+                    log.info("✅ Saved medical record to PostgreSQL, files to S3");
+                    break;
+
+                case "prescription":
+                    Prescription prescription = new Prescription();
+                    prescription.setId(recordId);
+                    prescription.setPatientId(patientId);
+                    prescription.setHospital(params.get("hospitalName"));
+                    prescription.setDoctorName(params.get("doctorName"));
+                    prescription.setMedicineName(params.get("medicineName"));
+                    prescription.setInstructions(params.get("instructions"));
+                    prescription.setNotes(params.get("notes"));
+                    prescription.setStatus(params.getOrDefault("status", "Active"));
+
+                    if (params.get("prescriptionDate") != null) {
+                        prescription.setPrescriptionDate(LocalDate.parse(params.get("prescriptionDate")));
+                    }
+
+                    if (prescriptionImage != null) {
+                        String s3Url = s3Service.uploadFile(prescriptionImage, "prescriptions");
+                        prescription.setPrescriptionImage(s3Url);
+                    }
+
+                    prescriptionRepository.save(prescription);
+                    log.info("✅ Saved prescription to PostgreSQL, files to S3");
                     break;
 
                 case "lab":
@@ -121,13 +150,17 @@ public class MedicalController {
                     labResult.setDoctorName(params.get("doctorName"));
                     labResult.setInstructions(params.get("instructions"));
                     labResult.setReport(params.get("report"));
-                    labResult.setCreatedAt(LocalDateTime.now());
+                    //labResult.setCreatedAt(LocalDateTime.now());
 
                     if (params.get("labResultDate") != null) {
+                        labResult.setLabResultDate(LocalDate.parse(params.get("labResultDate")));
+                    }
+                    if (softcopyFile != null) {
                         String s3Url = s3Service.uploadFile(softcopyFile, "labs");
                         labResult.setReportPath(s3Url);
                     }
-                    storage.saveLabResult(labResult);
+                    labResultRepository.save(labResult);
+                    log.info("✅ Saved lab result to PostgreSQL, files to S3");
                     break;
                 default:
                     return ResponseEntity.badRequest()
@@ -162,7 +195,7 @@ public class MedicalController {
         try {
             switch (type.toLowerCase()) {
                 case "medical":
-                    Optional<MedicalRecord> medicalOpt = storage.findMedicalRecordById(recordId);
+                    Optional<MedicalRecord> medicalOpt = medicalRecordRepository.findById(recordId);
                     if (medicalOpt.isEmpty()) {
                         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                                 .body(ApiResponse.error("Record not found"));
@@ -186,11 +219,11 @@ public class MedicalController {
                         String s3Url = s3Service.uploadFile(prescriptionImage, "prescriptions");
                         medicalRecord.setPrescriptionPath(s3Url);
                     }
-                    storage.saveMedicalRecord(medicalRecord);
+                    medicalRecordRepository.save(medicalRecord);
                     break;
 
                 case "prescription":
-                    Optional<Prescription> prescriptionOpt = storage.findPrescriptionById(recordId);
+                    Optional<Prescription> prescriptionOpt = prescriptionRepository.findById(recordId);
                     if (prescriptionOpt.isEmpty()) {
                         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                                 .body(ApiResponse.error("Record not found"));
@@ -210,11 +243,11 @@ public class MedicalController {
                         prescription.setPrescriptionImage(s3Url);
                     }
 
-                    storage.savePrescription(prescription);
+                    prescriptionRepository.save(prescription);
                     break;
 
                 case "lab":
-                    Optional<LabResult> labOpt = storage.findLabResultById(recordId);
+                    Optional<LabResult> labOpt = labResultRepository.findById(recordId);
                     if (labOpt.isEmpty()) {
                         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                                 .body(ApiResponse.error("Record not found"));
@@ -232,7 +265,7 @@ public class MedicalController {
                         labResult.setReportPath(s3Url);
                     }
 
-                    storage.saveLabResult(labResult);
+                    labResultRepository.save(labResult);
                     break;
 
                 default:
@@ -261,30 +294,30 @@ public class MedicalController {
         try {
             switch (type.toLowerCase()) {
                 case "medical":
-                    Optional<MedicalRecord> medicalOpt = storage.findMedicalRecordById(recordId);
+                    Optional<MedicalRecord> medicalOpt = medicalRecordRepository.findById(recordId);
                     if (medicalOpt.isPresent()) {
                         MedicalRecord record = medicalOpt.get();
                         s3Service.deleteFile(record.getSoftcopyPath());
                         s3Service.deleteFile(record.getPrescriptionPath());
-                        storage.deleteMedicalRecord(recordId);
+                        medicalRecordRepository.deleteById(recordId);
                     }
                     break;
 
                 case "prescription":
-                    Optional<Prescription> prescriptionOpt = storage.findPrescriptionById(recordId);
+                    Optional<Prescription> prescriptionOpt = prescriptionRepository.findById(recordId);
                     if (prescriptionOpt.isPresent()) {
                         Prescription prescription = prescriptionOpt.get();
                         s3Service.deleteFile(prescription.getPrescriptionImage());
-                        storage.deletePrescription(recordId);
+                        prescriptionRepository.deleteById(recordId);
                     }
                     break;
 
                 case "lab":
-                    Optional<LabResult> labOpt = storage.findLabResultById(recordId);
+                    Optional<LabResult> labOpt = labResultRepository.findById(recordId);
                     if (labOpt.isPresent()) {
                         LabResult labResult = labOpt.get();
                         s3Service.deleteFile(labResult.getReportPath());
-                        storage.deleteLabResult(recordId);
+                        labResultRepository.deleteById(recordId);
                     }
                     break;
 

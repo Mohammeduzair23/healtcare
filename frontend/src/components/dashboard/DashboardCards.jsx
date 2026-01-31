@@ -1,4 +1,4 @@
-import { FileText, Pill, Bell, TestTube } from 'lucide-react';
+import { FileText, Pill, Bell, TestTube, Calendar } from 'lucide-react';
 
 const DashboardCard = ({ icon, title, count, label, onClick }) => (
   <div
@@ -23,8 +23,10 @@ function DashboardCards({
   medicalRecordsCount, 
   labResultsCount, 
   prescriptionsCount,
+  appointmentsCount = 0,
   onNavigate,
-  onNotification 
+  onNotification,
+  onRequestAppointment
 }) {
   return (
     <>
@@ -38,6 +40,17 @@ function DashboardCards({
         </p>
       </div>
 
+      {/* REQUEST APPOINTMENT BUTTON - PROMINENT PLACEMENT */}
+      <div className="mb-8 flex justify-end">
+        <button
+          onClick={onRequestAppointment}
+          className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-lg font-semibold transition duration-200 flex items-center justify-center gap-3 shadow-md"
+        >
+          <Calendar className="w-5 h-5" />
+          Book Appointment
+        </button>
+      </div>
+
       {/* DASHBOARD CARDS */}
       <div className="grid md:grid-cols-2 gap-6">
         <DashboardCard
@@ -48,11 +61,11 @@ function DashboardCards({
           onClick={() => onNavigate('records')}
         />
         <DashboardCard
-          icon={<TestTube className="w-8 h-8 text-blue-600" />}
-          title="Lab Results"
-          count={labResultsCount}
-          label="Results"
-          onClick={() => onNavigate('lab')}
+          icon={<Calendar className='w-8 h-8 text-blue-600' />}
+          title="My Appointments"
+          count={appointmentsCount}
+          label="Appointments"
+          onClick={() => onNavigate('appointments')}
         />
         <DashboardCard
           icon={<Pill className="w-8 h-8 text-blue-600" />}
@@ -62,12 +75,19 @@ function DashboardCards({
           onClick={() => onNavigate('prescriptions')}
         />
         <DashboardCard
+          icon={<TestTube className="w-8 h-8 text-blue-600" />}
+          title="Lab Results"
+          count={labResultsCount}
+          label="Results"
+          onClick={() => onNavigate('lab')}
+        />  
+        <DashboardCard
           icon={<Bell className="w-8 h-8 text-blue-600" />}
           title="Upcoming Reminders"
           count={0}
           label="Reminders"
           onClick={() => onNotification('info', 'Reminders feature coming soon!')}
-        />
+        />   
       </div>
     </>
   );

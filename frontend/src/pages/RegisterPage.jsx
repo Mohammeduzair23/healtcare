@@ -12,7 +12,7 @@ function RegisterPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
   const types = [
     { value: 'Patient', label: 'Patient' },

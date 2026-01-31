@@ -2,27 +2,25 @@ package com.medicare.hub.controller;
 
 import com.medicare.hub.dto.*;
 import com.medicare.hub.model.User;
-import com.medicare.hub.storage.InMemoryStorage;
+import com.medicare.hub.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
+@RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:5173")
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final InMemoryStorage storage;
+    private final UserRepository userRepository;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
@@ -34,7 +32,7 @@ public class AuthController {
                 return ResponseEntity.badRequest()
                         .body(ApiResponse.error("All fields are requied"));
             }
-            Optional<User> existingUser = storage.findUserByEmail(request.getEmail());
+            Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
             if (existingUser.isPresent()) {
                 log.warn("⚠️ User already exists: {}", request.getEmail());
                 return ResponseEntity.badRequest()
@@ -48,7 +46,7 @@ public class AuthController {
             user.setRole(request.getRole());
             user.setCreatedAt(LocalDateTime.now());
 
-            storage.saveUser(user);
+            userRepository.save(user);
 
             log.info("✅ User created: {}",request.getEmail());
 
@@ -78,7 +76,7 @@ public class AuthController {
                 return ResponseEntity.badRequest()
                         .body(ApiResponse.error("Email and password are required"));
             }
-            Optional<User> userOpt = storage.findUserByEmailAndPassword(
+            Optional<User> userOpt = userRepository.findByEmailAndPassword(
                     request.getEmail(), request.getPassword()
             );
             if (userOpt.isEmpty()) {

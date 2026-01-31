@@ -225,7 +225,7 @@ const DisplayFields = ({ config, record, expanded }) => {
           return (
             <div key={field.key}>
               <a
-                href={`http://localhost:5000/${value}`}
+                href={`http://localhost:8080/${value}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 text-sm font-medium"

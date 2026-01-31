@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Pill, TestTube } from 'lucide-react';
+import { FileText, Pill, TestTube, Calendar } from 'lucide-react';
 
 // Import components
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import DashboardCards from '../components/dashboard/DashboardCards';
 import UnifiedRecordCard from '../components/dashboard/UnifiedRecordCard';
 import RecordSection from '../components/dashboard/RecordSection';
+import AppointmentCard from '../components/dashboard/AppointmentCard';
 import Notification from '../components/common/Notification';
 
 // Import UNIFIED modal with constants
 import UnifiedRecordModal, { RECORD_TYPES, MODES } from '../components/dashboard/UnifiedRecordModal';
+import AppointmentRequestModal from '../components/dashboard/AppointmentRequestModal';
 
 function PatientDashboard() {
   const navigate = useNavigate();
@@ -24,6 +26,8 @@ function PatientDashboard() {
   const [labResults, setLabResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [appointments, setAppointments] = useState([]);
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   
   // Single unified modal state
   const [modalConfig, setModalConfig] = useState({
@@ -34,7 +38,7 @@ function PatientDashboard() {
     existingData: null
   });
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
   // ============================================
   // MODAL HELPER FUNCTIONS
@@ -168,6 +172,18 @@ function PatientDashboard() {
                        [];
       setLabResults(labsList);
 
+       // Fetch Appointments
+      try {
+        const appointmentsRes = await fetch(`${API_URL}/patient/${patientId}/appointments`);
+        if (appointmentsRes.ok) {
+          const appointmentsData = await appointmentsRes.json();
+          setAppointments(appointmentsData.appointments || []);
+          console.log('📅 Appointments:', appointmentsData);
+        }
+      } catch (err) {
+        console.error('⚠️ Appointments fetch error:', err);
+      }
+
     } catch (err) {
       console.error('❌ Fetch error:', err);
       showNotification('error', 'Failed to load data. Please check your connection.');
@@ -276,10 +292,12 @@ function PatientDashboard() {
       {activeSection === 'dashboard' && (
         <DashboardCards
           medicalRecordsCount={medicalRecords.length}
-          labResultsCount={labResults.length}
+          appointmentsCount={appointments.length}
           prescriptionsCount={prescriptions.length}
+          labResultsCount={labResults.length}
           onNavigate={setActiveSection}
           onNotification={showNotification}
+          onRequestAppointment={() => setShowAppointmentModal(true)}
         />
       )}
 
@@ -349,6 +367,26 @@ function PatientDashboard() {
         />
       )}
 
+      {/* Appointments Section */}
+      {activeSection === 'appointments' && (
+        <RecordSection
+          title="My Appointments"
+          loading={loading}
+          records={appointments}
+          onAdd={() => setShowAppointmentModal(true)}
+          onBack={() => setActiveSection('dashboard')}
+          emptyIcon={Calendar}
+          emptyMessage="No appointments found"
+          addButtonText="Book Appointment"
+          renderRecord={(appointment) => (
+            <AppointmentCard 
+              key={appointment.id}
+              appointment={appointment}
+            />
+          )}
+        />
+      )}
+
       {/* SINGLE UNIFIED MODAL */}
       <UnifiedRecordModal
         show={modalConfig.show}
@@ -358,6 +396,14 @@ function PatientDashboard() {
         recordId={modalConfig.recordId}
         existingData={modalConfig.existingData}
         onClose={closeModal}
+        onSuccess={handleSuccess}
+        onError={handleError}
+      />
+      {/* APPOINTMENT REQUEST MODAL */}
+      <AppointmentRequestModal
+        show={showAppointmentModal}
+        patientId={userData?.id}
+        onClose={() => setShowAppointmentModal(false)}
         onSuccess={handleSuccess}
         onError={handleError}
       />

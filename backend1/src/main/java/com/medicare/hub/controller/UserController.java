@@ -2,7 +2,7 @@ package com.medicare.hub.controller;
 
 import com.medicare.hub.dto.ApiResponse;
 import com.medicare.hub.model.User;
-import com.medicare.hub.storage.InMemoryStorage;
+import com.medicare.hub.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -15,16 +15,16 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:5173")
 @AllArgsConstructor
 public class UserController {
 
-    private final InMemoryStorage storage;
+    private final UserRepository userRepository;
 
     @GetMapping("/users")
     ResponseEntity<?> getAllUsers() {
         try {
-            List<User> users = storage.findAllUsers();
+            List<User> users = userRepository.findAll();
             log.info("📊 Fetched {} users", users.size());
 
             return ResponseEntity.ok(Map.of(
@@ -42,7 +42,7 @@ public class UserController {
     @DeleteMapping("/users/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable String id) {
         try {
-            storage.deleteUser(id);
+            userRepository.deleteById(id);
             log.info("🗑️ User deleted: {}", id);
 
             return ResponseEntity.ok(Map.of(

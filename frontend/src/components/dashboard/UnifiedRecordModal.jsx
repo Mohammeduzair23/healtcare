@@ -9,7 +9,7 @@ import { X, FileUp, Image, AlertCircle } from 'lucide-react';
 // ============================================
 // CONFIGURATION CONSTANTS
 // ============================================
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:8080/api';
 
 const RECORD_TYPES = {
   MEDICAL: 'medical',
