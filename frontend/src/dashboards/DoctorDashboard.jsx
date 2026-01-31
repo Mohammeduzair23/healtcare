@@ -12,6 +12,7 @@ import AppointmentsList from '../components/dashboard/doctor/AppointmentsList';
 import PatientOverview from '../components/dashboard/doctor/PatientOverview';
 import TaskList from '../components/dashboard/doctor/TaskList';
 import RecentLabResults from '../components/dashboard/doctor/RecentLabResults';
+import PatientFullDetailsModal from '../components/dashboard/doctor/PatientFullDetailsModal';
 
 function DoctorDashboard() {
   const navigate = useNavigate();
@@ -29,8 +30,10 @@ function DoctorDashboard() {
   const [labResults, setLabResults] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [currentPatient, setCurrentPatient] = useState(null);
+  const [showFullDetailsModal, setShowFullDetailsModal] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState(null);
 
-  const API_URL = 'http://localhost:5000/api';
+  const API_URL = 'http://localhost:8080/api';
 
   // ============================================
   // NOTIFICATION HELPER
@@ -124,6 +127,52 @@ function DoctorDashboard() {
     }
   };
 
+  const handleViewFullRecord = (patientId) => {
+    setSelectedPatientId(patientId);
+    setShowFullDetailsModal(true);
+  };
+
+// APPOINTMENT HANDLERS
+const handleAcceptAppointment = async (appointmentId) => {
+  try {
+    const response = await fetch(`${API_URL}/doctor/${userData.id}/appointments/${appointmentId}/accept`, {
+      method: 'PUT'
+    });
+
+    const result = await response.json();
+
+    if (response.ok && result.success) {
+      showNotification('success', 'Appointment accepted successfully!');
+      await fetchDoctorData(userData.id);
+    } else {
+      showNotification('error', result.error || 'Failed to accept appointment');
+    }
+  } catch (err) {
+    console.error('❌ Accept appointment error:', err);
+    showNotification('error', 'Server error during acceptance.');
+  }
+};
+
+const handleRejectAppointment = async (appointmentId) => {
+  try {
+    const response = await fetch(`${API_URL}/doctor/${userData.id}/appointments/${appointmentId}/reject`, {
+      method: 'PUT'
+    });
+
+    const result = await response.json();
+
+    if (response.ok && result.success) {
+      showNotification('success', 'Appointment rejected.');
+      await fetchDoctorData(userData.id);
+    } else {
+      showNotification('error', result.error || 'Failed to reject appointment');
+    }
+  } catch (err) {
+    console.error('❌ Reject appointment error:', err);
+    showNotification('error', 'Server error during rejection.');
+  }
+};
+
   // ============================================
   // LOGOUT
   // ============================================
@@ -186,6 +235,8 @@ function DoctorDashboard() {
           <AppointmentsList 
             appointments={upcomingAppointments.slice(0, 4)}
             loading={loading}
+            onAccept={handleAcceptAppointment}
+            onReject={handleRejectAppointment}
           />
           <TaskList 
             tasks={tasks.slice(0, 3)}
@@ -202,6 +253,7 @@ function DoctorDashboard() {
           <PatientOverview 
             patient={currentPatient}
             loading={loading}
+            onViewFullRecord={handleViewFullRecord}
           />
         </div>
 
@@ -213,6 +265,14 @@ function DoctorDashboard() {
           />
         </div>
       </div>
+
+      {/* PATIENT FULL DETAILS MODAL */}
+      <PatientFullDetailsModal
+        show={showFullDetailsModal}
+        doctorId={userData?.id}
+        patientId={selectedPatientId}
+        onClose={() => setShowFullDetailsModal(false)}
+      />
     </DashboardLayout>
   );
 }
