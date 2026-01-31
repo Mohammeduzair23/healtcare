@@ -52,3 +52,11 @@ reports/        # medical record PDFs
 prescriptions/  # prescription images
 labs/           # lab report files
 ```
+## Git command
+```text
+If u done changes on Github make sure u first Run this command After that push the code to Github
+git pull origin main --rebase
+
+--rebase     what it does
+It moves your commits on top of the latest Github commits instead of creating 
+an extra "merge commit"
