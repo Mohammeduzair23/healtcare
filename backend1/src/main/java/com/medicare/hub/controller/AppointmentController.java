@@ -249,6 +249,46 @@ public class AppointmentController {
         }
     }
 
+    @PutMapping("/doctor/{doctorId}/appointments/{appointmentId}/complete")
+    public ResponseEntity<?> completeAppointment(
+            @PathVariable String doctorId,
+            @PathVariable String appointmentId) {
+
+        log.info("✓ Doctor {} marking appointment as completed: {}", doctorId, appointmentId);
+
+        try {
+            Optional<Appointment> appointmentOpt = appointmentRepository.findById(appointmentId);
+            if (appointmentOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.error("Appointment not found"));
+            }
+
+            Appointment appointment = appointmentOpt.get();
+
+            if (!appointment.getDoctorId().equals(doctorId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse.error("Not authorized to complete this appointment"));
+            }
+
+            // Mark as completed
+            appointment.setStatus("completed");
+            appointment.setUpdatedAt(LocalDateTime.now());
+            appointmentRepository.save(appointment);
+
+            log.info("✓ Appointment marked as completed");
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Appointment completed successfully"
+            ));
+
+        } catch (Exception e) {
+            log.error("❌ Error completing appointment:", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to complete appointment"));
+        }
+    }
+
     private List<Map<String, Object>> enrichAppointmentsWithPatientInfo(List<Appointment> appointments) {
         return appointments.stream()
                 .map(apt -> {

@@ -1,6 +1,6 @@
 package com.medicare.hub.controller;
 
-import com.medicare.hub.service.S3StorageService;
+import com.medicare.hub.service.CloudinaryService;
 import com.medicare.hub.dto.ApiResponse;
 import com.medicare.hub.model.LabResult;
 import com.medicare.hub.model.MedicalRecord;
@@ -32,7 +32,7 @@ public class MedicalController {
     private final MedicalRecordRepository medicalRecordRepository;
     private final PrescriptionRepository prescriptionRepository;
     private final LabResultRepository labResultRepository;
-    private final S3StorageService s3Service;
+    private final CloudinaryService cloudinaryService;
 
     @GetMapping("/patient/{patientId}/{type}/records")
     public ResponseEntity<?> getRecords(@PathVariable String patientId, @PathVariable String type) {
@@ -104,18 +104,18 @@ public class MedicalController {
                     if (params.get("recordDate") != null) {
                         medicalRecord.setRecordDate(LocalDate.parse(params.get("recordDate")));
                     }
-                    // Upload files to S3
+                    // Upload files to Cloudinary
                     if (softcopyFile != null) {
-                        String s3Url = s3Service.uploadFile(softcopyFile, "reports");
-                        medicalRecord.setSoftcopyPath(s3Url);
+                        String cloudinaryUrl = cloudinaryService.uploadFile(softcopyFile, "reports");
+                        medicalRecord.setSoftcopyPath(cloudinaryUrl);
                     }
 
                     if (prescriptionImage != null) {
-                        String s3Url = s3Service.uploadFile(prescriptionImage, "prescriptions");
-                        medicalRecord.setPrescriptionPath(s3Url);
+                        String cloudinaryUrl = cloudinaryService.uploadFile(prescriptionImage, "prescriptions");
+                        medicalRecord.setPrescriptionPath(cloudinaryUrl);
                     }
                     medicalRecordRepository.save(medicalRecord);
-                    log.info("✅ Saved medical record to PostgreSQL, files to S3");
+                    log.info("✅ Saved medical record to PostgreSQL, files to cloudinary");
                     break;
 
                 case "prescription":
@@ -134,12 +134,12 @@ public class MedicalController {
                     }
 
                     if (prescriptionImage != null) {
-                        String s3Url = s3Service.uploadFile(prescriptionImage, "prescriptions");
-                        prescription.setPrescriptionImage(s3Url);
+                        String cloudinaryUrl = cloudinaryService.uploadFile(prescriptionImage, "prescriptions");
+                        prescription.setPrescriptionImage(cloudinaryUrl);
                     }
 
                     prescriptionRepository.save(prescription);
-                    log.info("✅ Saved prescription to PostgreSQL, files to S3");
+                    log.info("✅ Saved prescription to PostgreSQL, files to Cloudinary");
                     break;
 
                 case "lab":
@@ -156,11 +156,11 @@ public class MedicalController {
                         labResult.setLabResultDate(LocalDate.parse(params.get("labResultDate")));
                     }
                     if (softcopyFile != null) {
-                        String s3Url = s3Service.uploadFile(softcopyFile, "labs");
-                        labResult.setReportPath(s3Url);
+                        String cloudinaryUrl = cloudinaryService.uploadFile(softcopyFile, "labs");
+                        labResult.setReportPath(cloudinaryUrl);
                     }
                     labResultRepository.save(labResult);
-                    log.info("✅ Saved lab result to PostgreSQL, files to S3");
+                    log.info("✅ Saved lab result to PostgreSQL, files to cloudinary");
                     break;
                 default:
                     return ResponseEntity.badRequest()
@@ -209,15 +209,15 @@ public class MedicalController {
                     if (params.get("details") != null) medicalRecord.setDetails(params.get("details"));
 
                     if (softcopyFile != null) {
-                        s3Service.deleteFile(medicalRecord.getSoftcopyPath());
-                        String s3Url = s3Service.uploadFile(softcopyFile, "reports");
-                        medicalRecord.setSoftcopyPath(s3Url);
+                        cloudinaryService.deleteFile(medicalRecord.getSoftcopyPath());
+                        String cloudinaryUrl = cloudinaryService.uploadFile(softcopyFile, "reports");
+                        medicalRecord.setSoftcopyPath(cloudinaryUrl);
                     }
 
                     if (prescriptionImage != null) {
-                        s3Service.deleteFile(medicalRecord.getPrescriptionPath());
-                        String s3Url = s3Service.uploadFile(prescriptionImage, "prescriptions");
-                        medicalRecord.setPrescriptionPath(s3Url);
+                        cloudinaryService.deleteFile(medicalRecord.getPrescriptionPath());
+                        String cloUrl = cloudinaryService.uploadFile(prescriptionImage, "prescriptions");
+                        medicalRecord.setPrescriptionPath(cloUrl);
                     }
                     medicalRecordRepository.save(medicalRecord);
                     break;
@@ -238,9 +238,9 @@ public class MedicalController {
                     if (params.get("status") != null) prescription.setStatus(params.get("status"));
 
                     if (prescriptionImage != null) {
-                        s3Service.deleteFile(prescription.getPrescriptionImage());
-                        String s3Url = s3Service.uploadFile(prescriptionImage, "prescriptions");
-                        prescription.setPrescriptionImage(s3Url);
+                        cloudinaryService.deleteFile(prescription.getPrescriptionImage());
+                        String cloUrl = cloudinaryService.uploadFile(prescriptionImage, "prescriptions");
+                        prescription.setPrescriptionImage(cloUrl);
                     }
 
                     prescriptionRepository.save(prescription);
@@ -260,9 +260,9 @@ public class MedicalController {
                     if (params.get("report") != null) labResult.setReport(params.get("report"));
 
                     if (softcopyFile != null) {
-                        s3Service.deleteFile(labResult.getReportPath());
-                        String s3Url = s3Service.uploadFile(softcopyFile, "labs");
-                        labResult.setReportPath(s3Url);
+                        cloudinaryService.deleteFile(labResult.getReportPath());
+                        String cloUrl = cloudinaryService.uploadFile(softcopyFile, "labs");
+                        labResult.setReportPath(cloUrl);
                     }
 
                     labResultRepository.save(labResult);
@@ -297,8 +297,8 @@ public class MedicalController {
                     Optional<MedicalRecord> medicalOpt = medicalRecordRepository.findById(recordId);
                     if (medicalOpt.isPresent()) {
                         MedicalRecord record = medicalOpt.get();
-                        s3Service.deleteFile(record.getSoftcopyPath());
-                        s3Service.deleteFile(record.getPrescriptionPath());
+                        cloudinaryService.deleteFile(record.getSoftcopyPath());
+                        cloudinaryService.deleteFile(record.getPrescriptionPath());
                         medicalRecordRepository.deleteById(recordId);
                     }
                     break;
@@ -307,7 +307,7 @@ public class MedicalController {
                     Optional<Prescription> prescriptionOpt = prescriptionRepository.findById(recordId);
                     if (prescriptionOpt.isPresent()) {
                         Prescription prescription = prescriptionOpt.get();
-                        s3Service.deleteFile(prescription.getPrescriptionImage());
+                        cloudinaryService.deleteFile(prescription.getPrescriptionImage());
                         prescriptionRepository.deleteById(recordId);
                     }
                     break;
@@ -316,7 +316,7 @@ public class MedicalController {
                     Optional<LabResult> labOpt = labResultRepository.findById(recordId);
                     if (labOpt.isPresent()) {
                         LabResult labResult = labOpt.get();
-                        s3Service.deleteFile(labResult.getReportPath());
+                        cloudinaryService.deleteFile(labResult.getReportPath());
                         labResultRepository.deleteById(recordId);
                     }
                     break;
