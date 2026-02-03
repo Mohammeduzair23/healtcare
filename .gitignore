@@ -5,3 +5,5 @@ backend1/target/
 backend1/.idea/
 
 .env
+
+backend1/src/main/resources/application.properties
