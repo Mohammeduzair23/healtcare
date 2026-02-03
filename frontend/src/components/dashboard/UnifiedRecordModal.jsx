@@ -48,11 +48,12 @@ const FORM_CONFIGS = {
       prescriptionImage: { label: 'Prescription Image', accept: FILE_LIMITS.ACCEPTED_IMAGES, icon: 'image' }
     },
     dbMapping: {
-      doctorName: 'doctor_name',
-      recordType: 'record_type',
+      hospitalName: 'hospital',
+      doctorName: 'doctorName',
+      recordType: 'recordType',
       description: 'description',
       details: 'details',
-      recordDate: 'record_date'
+      recordDate: 'recordDate'
     }
   },
   
@@ -71,11 +72,12 @@ const FORM_CONFIGS = {
       prescriptionImage: { label: 'Prescription Image/PDF', accept: `${FILE_LIMITS.ACCEPTED_IMAGES},.pdf`, icon: 'image', requiredOnAdd: true }
     },
     dbMapping: {
-      doctorName: 'doctor_name',
-      medicineName: 'medicine_name',
+      hospitalName: 'hospital',
+      doctorName: 'doctorName',
+      medicineName: 'medicineName',
       instructions: 'instructions',
       notes: 'notes',
-      prescriptionDate: 'prescription_date',
+      prescriptionDate: 'prescriptionDate',
       status: 'status'
     }
   },
@@ -93,11 +95,11 @@ const FORM_CONFIGS = {
       softcopyFile: { label: 'Lab Report', accept: FILE_LIMITS.ACCEPTED_ALL, icon: 'document', requiredOnAdd: true }
     },
     dbMapping: {
-      hospitalName: 'hospital_name',
-      doctorName: 'doctor_name',
+      hospitalName: 'hospitalName',
+      doctorName: 'doctorName',
       instructions: 'instructions',
       report: 'report',
-      labResultDate: 'lab_result_date'
+      labResultDate: 'labResultDate'
     }
   }
 };
@@ -327,7 +329,7 @@ function UnifiedRecordModal({
   useEffect(() => {
     if (show && type) {
       const initialData = getInitialFormData(type, existingData, mode);
-      console.log('🔧 Initializing form with data:', initialData);
+      //console.log('🔧 Initializing form with data:', initialData);
       console.log('📝 Mode:', mode, 'Type:', type);
       console.log('📦 Existing Data:', existingData);
       setFormData(initialData);
@@ -443,14 +445,8 @@ function UnifiedRecordModal({
   // Get existing file path for display
   const getExistingFilePath = (fileName) => {
     if (mode === MODES.EDIT && existingData) {
-      const fileConfig = config.files[fileName];
-      if (fileConfig && config.dbMapping) {
-        // Map file field to database column
-        const dbColumn = fileName === 'softcopyFile' ? 'softcopy_path' : 
-                        fileName === 'prescriptionImage' ? 'prescription_image' : 
-                        fileName === 'reportFile' ? 'report_path' : null;
-        return existingData[dbColumn];
-      }
+      if (fileName === 'softcopyFile') return existingData.softcopyPath;
+      if (fileName === 'prescriptionImage') return existingData.prescriptionPath || existingData.prescriptionImage;
     }
     return null;
   };

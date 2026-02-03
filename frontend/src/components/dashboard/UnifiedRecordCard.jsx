@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { FileText, Edit, Trash2, TestTube, Pill, Image } from 'lucide-react';
 
 /**
- * Unified Record Card Component
- * Shows first N fields by default, with "Show More" to expand remaining fields
+ * FINAL FIXED VERSION - Displays data from backend correctly with URL validation
  */
 
 // ============================================
@@ -14,32 +13,18 @@ const CARD_CONFIGS = {
     icon: FileText,
     iconColor: 'text-blue-600',
     iconBgColor: 'bg-blue-100',
-    dateField: 'record_date',
-    titleField: 'record_type',
-    //subtitleField: 'doctor_name',
-    maxVisibleFields: 2,  // ✅ Show only first 4 fields when collapsed
-    files: [
-      {
-        field: 'softcopy_path',
-        label: 'View Report',
-        icon: FileText,
-        color: 'text-blue-600',
-        hoverColor: 'hover:text-blue-700'
-      },
-      {
-        field: 'prescription_path',
-        label: 'View Prescription',
-        icon: Image,
-        color: 'text-green-600',
-        hoverColor: 'hover:text-green-700'
-      }
-    ],
+    dateField: 'recordDate',
+    titleField: 'recordType',
+    maxVisibleFields: 4,
+    files: [],
     displayFields: [
       { key: 'hospital', label: 'Hospital Name'},
-      { key: 'doctor_name', label: 'Doctor' },
-      { key: 'record_type', label: 'Record Type' },
+      { key: 'doctorName', label: 'Doctor' },
+      { key: 'recordType', label: 'Record Type' },
       { key: 'description', label: 'Description' },
-      { key: 'details', label: 'Details', className: 'text-sm text-gray-600' }
+      { key: 'details', label: 'Details' },
+      { key: 'softcopyPath', label: 'View Medical Report', isFile: true, hoverColor: 'hover:text-green-700' },
+      { key: 'prescriptionPath', label: 'View Prescription', isFile: true }
     ]
   },
   
@@ -47,19 +32,19 @@ const CARD_CONFIGS = {
     icon: Pill,
     iconColor: 'text-green-600',
     iconBgColor: 'bg-green-100',
-    dateField: 'prescription_date',
-    titleField: 'medicine_name',
+    dateField: 'prescriptionDate',
+    titleField: 'medicineName',
     titleLabel: 'Medicines',
-    subtitleField: 'doctor_name',
+    subtitleField: 'doctorName',
     statusField: 'status',
-    maxVisibleFields: 2,
+    maxVisibleFields: 4,
     files: [],
     displayFields: [
       { key: 'hospital', label: 'Hospital Name', priority: 1},
-      { key: 'doctor_name', label: 'Doctor', priority: 5 },
+      { key: 'doctorName', label: 'Doctor', priority: 5 },
       { key: 'instructions', label: 'Instructions', priority: 2 },
       { key: 'notes', label: 'Notes', priority: 3 },
-      { key: 'prescription_image', label: 'View Prescription Image', priority: 4, isFile: true }
+      { key: 'prescriptionImage', label: 'View Prescription Image', priority: 4, isFile: true }
     ]
   },
   
@@ -67,17 +52,16 @@ const CARD_CONFIGS = {
     icon: TestTube,
     iconColor: 'text-purple-600',
     iconBgColor: 'bg-purple-100',
-    dateField: 'lab_result_date',
-    titleField: 'hospital_name',
-    //subtitleField: 'doctor_name',
-    maxVisibleFields: 2,
+    dateField: 'labResultDate',
+    titleField: 'hospitalName',
+    maxVisibleFields: 4,
     files: [],
     displayFields: [
-      { key: 'hospital_name', label: 'Hospital Name', priority: 1 },
-      { key: 'doctor_name', label: 'Doctor', priority: 5 },
+      { key: 'hospitalName', label: 'Hospital Name', priority: 1 },
+      { key: 'doctorName', label: 'Doctor', priority: 5 },
       { key: 'report', label: 'Report Summary', priority: 2 },
       { key: 'instructions', label: 'Instructions', priority: 3 },
-      { key: 'report_path', label: 'View Lab Report', priority: 4, isFile: true }
+      { key: 'reportPath', label: 'View Lab Report', priority: 4, isFile: true }
     ]
   }
 };
@@ -94,33 +78,62 @@ const STATUS_COLORS = {
 // ============================================
 
 /**
+ * Fix malformed Cloudinary URLs
+ */
+const fixCloudinaryUrl = (url) => {
+  if (!url) return null;
+  
+  // Fix missing slash after https:
+  if (url.startsWith('https:/') && !url.startsWith('https://')) {
+    url = url.replace('https:/', 'https://');
+  }
+  
+  // Fix missing slash after http:
+  if (url.startsWith('http:/') && !url.startsWith('http://')) {
+    url = url.replace('http:/', 'http://');
+  }
+  
+  return url;
+};
+
+/**
  * Format date for display
  */
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
+  try {
+    let dateObj;
+    if (Array.isArray(dateString)) {
+      const [year, month, day] = dateString;
+      dateObj = new Date(year, month - 1, day);
+    } else {
+      dateObj = new Date(dateString);
+    }
+    
+    return dateObj.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch (error) {
+    console.error('Date formatting error:', error);
+    return 'N/A';
+  }
 };
 
 /**
  * Get fields to display based on expanded state
  */
 const getVisibleFields = (config, record, expanded) => {
-  // Filter out fields that don't have values
   const fieldsWithData = config.displayFields.filter(field => {
     const value = record[field.key];
     return value !== null && value !== undefined && value !== '';
   });
 
-  // If collapsed, show only first N fields
   if (!expanded && config.maxVisibleFields) {
     return fieldsWithData.slice(0, config.maxVisibleFields);
   }
 
-  // If expanded, show all fields
   return fieldsWithData;
 };
 
@@ -222,13 +235,20 @@ const DisplayFields = ({ config, record, expanded }) => {
 
         // Special handling for file links
         if (field.isFile && value) {
+          const fixedUrl = fixCloudinaryUrl(value);  // ✅ FIX: Validate and fix URL
+          
           return (
             <div key={field.key}>
               <a
-                href={`http://localhost:8080/${value}`}
+                href={fixedUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                onClick={(e) => {
+                  // ✅ FIX: Prevent default and manually open in new tab
+                  e.preventDefault();
+                  window.open(fixedUrl, '_blank', 'noopener,noreferrer');
+                }}
+                className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 text-sm font-medium cursor-pointer"
               >
                 <FileText className="w-4 h-4" />
                 <span>{field.label}</span>
@@ -249,14 +269,6 @@ const DisplayFields = ({ config, record, expanded }) => {
 };
 
 /**
- * File Links Section
- */
-const FileLinks = ({ config, record }) => {
-  // This component is no longer needed as files are now part of displayFields
-  return null;
-};
-
-/**
  * Expand/Collapse Button
  */
 const ExpandButton = ({ expanded, onClick, hiddenFieldsCount }) => (
@@ -265,7 +277,7 @@ const ExpandButton = ({ expanded, onClick, hiddenFieldsCount }) => (
       onClick={onClick}
       className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
     >
-      {expanded ? 'Show less' : `Show more...`}
+      {expanded ? 'Show less' : `Show more (${hiddenFieldsCount} more field${hiddenFieldsCount !== 1 ? 's' : ''})`}
     </button>
   </div>
 );
@@ -276,7 +288,6 @@ const ExpandButton = ({ expanded, onClick, hiddenFieldsCount }) => (
 function UnifiedRecordCard({ type, record, onEdit, onDelete }) {
   const [expanded, setExpanded] = useState(false);
 
-  // Get configuration for this record type
   const config = CARD_CONFIGS[type];
   
   if (!config) {
@@ -284,17 +295,14 @@ function UnifiedRecordCard({ type, record, onEdit, onDelete }) {
     return null;
   }
 
-  // Check if card has more fields than visible limit
   const showExpandButton = hasMoreFields(config, record);
   
-  // Calculate hidden fields count
   const totalFields = config.displayFields.filter(field => {
     const value = record[field.key];
     return value !== null && value !== undefined && value !== '';
   }).length;
   const hiddenFieldsCount = Math.max(0, totalFields - config.maxVisibleFields);
 
-  // Handle delete with confirmation
   const handleDelete = (recordId) => {
     const recordTypeName = type === 'medical' ? 'medical record' :
                           type === 'prescription' ? 'prescription' :

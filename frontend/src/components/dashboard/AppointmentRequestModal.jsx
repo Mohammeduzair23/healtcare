@@ -3,6 +3,15 @@ import { X, Calendar, Clock, User, FileText } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
+// ============================================
+// CONFIGURATION - Easy to modify
+// ============================================
+const TIME_CONFIG = {
+  START_HOUR: 10,  // 10 AM - Change this to modify start time
+  END_HOUR: 23,    // 11 PM - Change this to modify end time
+  INTERVAL_MINUTES: 30  // 30-minute slots - Change to 15, 30, or 60
+};
+
 // Test doctors list (will be replaced with API call later)
 const TEST_DOCTORS = [
   { id: "doc1", name: "Dr. Sarah Mitchell", specialty: "Cardiologist" },
@@ -18,6 +27,59 @@ const APPOINTMENT_TYPES = [
   'Emergency'
 ];
 
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+/**
+ * Generate time slots based on configuration
+ */
+const generateTimeSlots = () => {
+  const slots = [];
+  const startHour = TIME_CONFIG.START_HOUR;
+  const endHour = TIME_CONFIG.END_HOUR;
+  const interval = TIME_CONFIG.INTERVAL_MINUTES;
+
+  for (let hour = startHour; hour <= endHour; hour++) {
+    for (let minute = 0; minute < 60; minute += interval) {
+      // Don't add slots that go past end hour
+      if (hour === endHour && minute > 0) break;
+      
+      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      const displayTime = formatTimeDisplay(hour, minute);
+      
+      slots.push({
+        value: timeString,
+        label: displayTime
+      });
+    }
+  }
+  
+  return slots;
+};
+
+/**
+ * Format time for display (e.g., "10:00 AM", "2:30 PM")
+ */
+const formatTimeDisplay = (hour, minute) => {
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+  const displayMinute = minute.toString().padStart(2, '0');
+  return `${displayHour}:${displayMinute} ${period}`;
+};
+
+/**
+ * Get readable time range for display
+ */
+const getTimeRangeText = () => {
+  const startTime = formatTimeDisplay(TIME_CONFIG.START_HOUR, 0);
+  const endTime = formatTimeDisplay(TIME_CONFIG.END_HOUR, 0);
+  return `${startTime} - ${endTime}`;
+};
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
 function AppointmentRequestModal({ show, patientId, onClose, onSuccess, onError }) {
   const [formData, setFormData] = useState({
     doctorId: '',
@@ -28,6 +90,7 @@ function AppointmentRequestModal({ show, patientId, onClose, onSuccess, onError 
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [doctors, setDoctors] = useState(TEST_DOCTORS);
+  const [timeSlots] = useState(generateTimeSlots());
 
   useEffect(() => {
     if (show) {
@@ -180,14 +243,23 @@ function AppointmentRequestModal({ show, patientId, onClose, onSuccess, onError 
                 <Clock className="w-4 h-4" />
                 Appointment Time <span className="text-red-500">*</span>
               </label>
-              <input
-                type="time"
+              <select
                 name="appointmentTime"
                 value={formData.appointmentTime}
                 onChange={handleInputChange}
                 disabled={isSubmitting}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
-              />
+              >
+                <option value="">-- Select Time --</option>
+                {timeSlots.map(slot => (
+                  <option key={slot.value} value={slot.value}>
+                    {slot.label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-2 text-xs text-gray-500">
+                📅 Available hours: {getTimeRangeText()}
+              </p>
             </div>
 
             {/* Appointment Type */}

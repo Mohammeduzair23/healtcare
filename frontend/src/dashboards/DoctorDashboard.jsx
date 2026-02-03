@@ -6,7 +6,7 @@ import { Users, Calendar, TestTube, ClipboardList } from 'lucide-react';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import Notification from '../components/common/Notification';
 
-// Import new doctor-specific components
+// Import doctor-specific components
 import DoctorStatsCards from '../components/dashboard/doctor/DoctorStatsCards';
 import AppointmentsList from '../components/dashboard/doctor/AppointmentsList';
 import PatientOverview from '../components/dashboard/doctor/PatientOverview';
@@ -81,7 +81,7 @@ function DoctorDashboard() {
         setTodayAppointments(data.appointments || []);
       }
 
-      // Fetch Upcoming Appointments
+      // Fetch Upcoming Appointments (includes pending requests)
       const upcomingRes = await fetch(`${API_URL}/doctor/${doctorId}/appointments/upcoming`);
       if (upcomingRes.ok) {
         const data = await upcomingRes.json();
@@ -132,46 +132,103 @@ function DoctorDashboard() {
     setShowFullDetailsModal(true);
   };
 
-// APPOINTMENT HANDLERS
-const handleAcceptAppointment = async (appointmentId) => {
-  try {
-    const response = await fetch(`${API_URL}/doctor/${userData.id}/appointments/${appointmentId}/accept`, {
-      method: 'PUT'
-    });
+  // ============================================
+  // APPOINTMENT HANDLERS
+  // ============================================
+  const handleAcceptAppointment = async (appointmentId) => {
+    console.log('✅ Accepting appointment:', appointmentId);
+    
+    try {
+      const response = await fetch(
+        `${API_URL}/doctor/${userData.id}/appointments/${appointmentId}/accept`, 
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
 
-    const result = await response.json();
+      const result = await response.json();
 
-    if (response.ok && result.success) {
-      showNotification('success', 'Appointment accepted successfully!');
-      await fetchDoctorData(userData.id);
-    } else {
-      showNotification('error', result.error || 'Failed to accept appointment');
+      if (response.ok && result.success) {
+        showNotification('success', 'Appointment accepted successfully!');
+        await fetchDoctorData(userData.id);
+      } else {
+        showNotification('error', result.error || 'Failed to accept appointment');
+      }
+    } catch (err) {
+      console.error('❌ Accept appointment error:', err);
+      showNotification('error', 'Server error during acceptance.');
     }
-  } catch (err) {
-    console.error('❌ Accept appointment error:', err);
-    showNotification('error', 'Server error during acceptance.');
-  }
-};
+  };
 
-const handleRejectAppointment = async (appointmentId) => {
-  try {
-    const response = await fetch(`${API_URL}/doctor/${userData.id}/appointments/${appointmentId}/reject`, {
-      method: 'PUT'
-    });
-
-    const result = await response.json();
-
-    if (response.ok && result.success) {
-      showNotification('success', 'Appointment rejected.');
-      await fetchDoctorData(userData.id);
-    } else {
-      showNotification('error', result.error || 'Failed to reject appointment');
+  const handleRejectAppointment = async (appointmentId) => {
+    console.log('❌ Rejecting appointment:', appointmentId);
+    
+    if (!window.confirm('Are you sure you want to reject this appointment request?')) {
+      return;
     }
-  } catch (err) {
-    console.error('❌ Reject appointment error:', err);
-    showNotification('error', 'Server error during rejection.');
-  }
-};
+    
+    try {
+      const response = await fetch(
+        `${API_URL}/doctor/${userData.id}/appointments/${appointmentId}/reject`, 
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        showNotification('success', 'Appointment rejected.');
+        await fetchDoctorData(userData.id);
+      } else {
+        showNotification('error', result.error || 'Failed to reject appointment');
+      }
+    } catch (err) {
+      console.error('❌ Reject appointment error:', err);
+      showNotification('error', 'Server error during rejection.');
+    }
+  };
+
+  // ============================================
+  // NEW: MARK APPOINTMENT AS COMPLETED
+  // ============================================
+  const handleMarkComplete = async (appointmentId) => {
+    console.log('✓ Marking appointment as completed:', appointmentId);
+    
+    if (!window.confirm('Mark this appointment as completed? It will be removed from the list.')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(
+        `${API_URL}/doctor/${userData.id}/appointments/${appointmentId}/complete`, 
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        showNotification('success', 'Appointment marked as completed!');
+        await fetchDoctorData(userData.id);
+      } else {
+        showNotification('error', result.error || 'Failed to mark appointment as completed');
+      }
+    } catch (err) {
+      console.error('❌ Mark complete error:', err);
+      showNotification('error', 'Server error. Please try again.');
+    }
+  };
 
   // ============================================
   // LOGOUT
@@ -232,17 +289,18 @@ const handleRejectAppointment = async (appointmentId) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         {/* Left Column - 1/3 width */}
         <div className="lg:col-span-1 space-y-6">
+          {/* Appointments List with all handlers */}
           <AppointmentsList 
-            appointments={upcomingAppointments.slice(0, 4)}
+            appointments={upcomingAppointments.slice(0, 5)}
             loading={loading}
             onAccept={handleAcceptAppointment}
             onReject={handleRejectAppointment}
+            onMarkComplete={handleMarkComplete}
           />
           <TaskList 
             tasks={tasks.slice(0, 3)}
             loading={loading}
             onTaskComplete={(taskId) => {
-              // Handle task completion
               console.log('Complete task:', taskId);
             }}
           />
@@ -250,6 +308,7 @@ const handleRejectAppointment = async (appointmentId) => {
 
         {/* Middle Column - 1/3 width */}
         <div className="lg:col-span-1">
+          {/* FIXED: Pass onViewFullRecord prop */}
           <PatientOverview 
             patient={currentPatient}
             loading={loading}

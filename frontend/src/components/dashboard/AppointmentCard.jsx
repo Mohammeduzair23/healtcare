@@ -1,6 +1,71 @@
 import { Calendar, Clock, User, CheckCircle, XCircle, AlertCircle, Clock as Pending } from 'lucide-react';
 
 function AppointmentCard({ appointment }) {
+  // ✅ FIXED: Added proper date formatting function
+  const formatDate = (dateValue) => {
+    if (!dateValue) return 'N/A';
+    
+    try {
+      // Handle array format [year, month, day] from backend
+      if (Array.isArray(dateValue)) {
+        const [year, month, day] = dateValue;
+        const date = new Date(year, month - 1, day);
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+      }
+      
+      // Handle ISO string format
+      const date = new Date(dateValue);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return 'N/A';
+    }
+  };
+
+  // ✅ FIXED: Added proper time formatting function
+  const formatTime = (timeValue) => {
+    if (!timeValue) return 'N/A';
+    
+    try {
+      // Handle array format [hour, minute, second] from backend
+      if (Array.isArray(timeValue)) {
+        const [hour, minute] = timeValue;
+        const date = new Date();
+        date.setHours(hour, minute, 0);
+        return date.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
+      }
+      
+      // Handle string format "HH:MM:SS" or "HH:MM"
+      if (typeof timeValue === 'string') {
+        const [hour, minute] = timeValue.split(':');
+        const date = new Date();
+        date.setHours(parseInt(hour), parseInt(minute), 0);
+        return date.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
+      }
+      
+      return timeValue;
+    } catch (error) {
+      console.error('Time formatting error:', error);
+      return 'N/A';
+    }
+  };
+
   const getStatusConfig = (status) => {
     switch (status?.toLowerCase()) {
       case 'accepted':
@@ -81,7 +146,7 @@ function AppointmentCard({ appointment }) {
             <Calendar className="w-5 h-5 text-gray-400" />
             <div>
               <p className="text-xs text-gray-500">Date</p>
-              <p className="text-sm font-medium">{appointment.appointmentDate || 'N/A'}</p>
+              <p className="text-sm font-medium">{formatDate(appointment.appointmentDate)}</p>
             </div>
           </div>
           
@@ -89,7 +154,7 @@ function AppointmentCard({ appointment }) {
             <Clock className="w-5 h-5 text-gray-400" />
             <div>
               <p className="text-xs text-gray-500">Time</p>
-              <p className="text-sm font-medium">{appointment.appointmentTime || 'N/A'}</p>
+              <p className="text-sm font-medium">{formatTime(appointment.appointmentTime)}</p>
             </div>
           </div>
         </div>
