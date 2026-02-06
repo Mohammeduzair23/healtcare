@@ -44,6 +44,24 @@ public class MedicalRecord {
 
     private String category;
 
+    @Column(name = "patient_name")
+    private String patientName;
+
+    @Column(name = "patient_age")
+    private Integer patientAge;
+
+    @Column(name = "patient_condition", columnDefinition = "TEXT")
+    private String patientCondition;
+
+    @Column(name = "last_visit")
+    private LocalDate lastVisit;
+
+    @Column(name = "medications", columnDefinition = "TEXT")
+    private String medications;
+
+    @Column(name = "allergies", columnDefinition = "TEXT")
+    private String allergies;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

@@ -310,9 +310,10 @@ function DoctorDashboard() {
         <div className="lg:col-span-1">
           {/* FIXED: Pass onViewFullRecord prop */}
           <PatientOverview 
-            patient={currentPatient}
+            //patient={currentPatient}
             loading={loading}
             onViewFullRecord={handleViewFullRecord}
+            doctorId={userData.id}
           />
         </div>
 

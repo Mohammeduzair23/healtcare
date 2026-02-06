@@ -41,7 +41,10 @@ const FORM_CONFIGS = {
       recordType: { label: 'Record Type', required: true, type: 'text', placeholder: 'e.g., General Checkup, Blood Test' },
       description: { label: 'Description', required: false, type: 'text', placeholder: 'Brief description' },
       details: { label: 'Details', required: false, type: 'textarea', placeholder: 'Detailed information', rows: 3 },
-      recordDate: { label: 'Date', required: true, type: 'date', hideOnEdit: true }
+      recordDate: { label: 'Date', required: true, type: 'date', hideOnEdit: true },
+      condition: { label: 'Medical Condition', required: false, type: 'text', placeholder: 'e.g., Hypertension, Diabetes' },
+      medications: { label: 'Current Medications', required: false, type: 'text', placeholder: 'Separate with commas: Med1, Med2' },
+      allergies: { label: 'Allergies', required: false, type: 'text', placeholder: 'Separate with commas: Allergy1, Allergy2' }
     },
     files: {
       softcopyFile: { label: 'Medical Report (PDF/Document)', accept: FILE_LIMITS.ACCEPTED_DOCS, icon: 'document' },

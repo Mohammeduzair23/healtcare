@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -26,6 +28,27 @@ public class User {
 
     @Column(nullable = false)
     private String role;
+
+    @Column(name = "gender")
+    private String gender;
+
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
+    @Column(name = "age")
+    private Integer age;
+
+    /*@Column(name = "condition", columnDefinition = "TEXT")
+    private String condition;
+
+    @Column(name = "last_visit")
+    private LocalDate lastVisit;
+
+    @Column(name = "medications", columnDefinition = "TEXT")
+    private String medications;  // JSON: "[\"Med1\",\"Med2\"]"
+
+    @Column(name = "allergies", columnDefinition = "TEXT")
+    private String allergies;*/
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

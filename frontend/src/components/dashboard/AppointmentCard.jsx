@@ -1,5 +1,5 @@
 import { Calendar, Clock, User, CheckCircle, XCircle, AlertCircle, Clock as Pending } from 'lucide-react';
-
+import PatientNotifications from './PatientNotifications';
 function AppointmentCard({ appointment }) {
   // ✅ FIXED: Added proper date formatting function
   const formatDate = (dateValue) => {

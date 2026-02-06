@@ -1,44 +1,90 @@
-import { Activity, Heart, Pill, AlertCircle, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Activity, Heart, Pill, AlertCircle, Search, X as CloseIcon } from 'lucide-react';
+import PatientAccessModal from './PatientAccessModal';
 
 /**
- * FIXED PatientOverview Component
- * - Fixed onViewFullRecord error
- * - Shows empty state by default
- * - Has "View Patient" button for future passkey system
+ * Complete PatientOverview with Passkey System
+ * - Empty by default
+ * - "View Patient" button opens passkey modal
+ * - Shows patient data after passkey verification
+ * - Displays medications and allergies (no hardcoded vitals)
  */
 
-function PatientOverview({ patient, loading, onViewFullRecord }) {
-  
-  // Empty state when no patient selected
-  if (!patient && !loading) {
+function PatientOverview({ loading, onViewFullRecord, doctorId }) {
+  const [showAccessModal, setShowAccessModal] = useState(false);
+  const [currentPatient, setCurrentPatient] = useState(null);
+  const [notification, setNotification] = useState(null);
+
+  // Listen for successful passkey verification
+  useEffect(() => {
+    const handleAccessGranted = (event) => {
+      console.log('✅ Access granted, patient data:', event.detail);
+      setCurrentPatient(event.detail);
+    };
+
+    window.addEventListener('patientAccessGranted', handleAccessGranted);
+    return () => window.removeEventListener('patientAccessGranted', handleAccessGranted);
+  }, []);
+
+  const handleClearPatient = () => {
+    setCurrentPatient(null);
+  };
+
+  const showNotification = (type, message) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 4000);
+  };
+
+  // Empty state - no patient selected
+  if (!currentPatient && !loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Patient Overview</h2>
-        
-        <div className="flex flex-col items-center justify-center py-12">
-          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-            <Search className="w-10 h-10 text-gray-400" />
-          </div>
-          <p className="text-sm text-gray-500 mb-4 text-center">
-            No patient selected
-          </p>
-          <p className="text-xs text-gray-400 mb-6 text-center max-w-xs">
-            Click "View Patient" to search for a patient by email and request access to their records
-          </p>
+      <>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Patient Overview</h2>
           
-          {/* Future: This will open passkey modal */}
-          <button 
-            onClick={() => {
-              // TODO: Open patient access modal (passkey system)
-              alert('Patient access system coming soon!\nDoctor will:\n1. Enter patient email\n2. System generates 5-char code\n3. Patient receives code\n4. Doctor enters code to view records');
-            }}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2.5 px-6 rounded-lg transition-colors flex items-center gap-2"
-          >
-            <Search className="w-4 h-4" />
-            View Patient Records
-          </button>
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <Search className="w-10 h-10 text-gray-400" />
+            </div>
+            <p className="text-sm text-gray-500 mb-4 text-center">
+              No patient selected
+            </p>
+            <p className="text-xs text-gray-400 mb-6 text-center max-w-xs">
+              Search for a patient by email and request secure access to their medical records
+            </p>
+            
+            <button 
+              onClick={() => setShowAccessModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2.5 px-6 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <Search className="w-4 h-4" />
+              View Patient Records
+            </button>
+          </div>
         </div>
-      </div>
+
+        {/* Passkey Modal */}
+        <PatientAccessModal
+          show={showAccessModal}
+          doctorId={doctorId}
+          onClose={() => setShowAccessModal(false)}
+          onSuccess={(msg) => showNotification('success', msg)}
+          onError={(msg) => showNotification('error', msg)}
+        />
+
+        {/* Notification Toast */}
+        {notification && (
+          <div className={`fixed top-4 right-4 z-50 max-w-sm rounded-lg shadow-lg p-4 ${
+            notification.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+          }`}>
+            <p className={`text-sm font-medium ${
+              notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+            }`}>
+              {notification.message}
+            </p>
+          </div>
+        )}
+      </>
     );
   }
 
@@ -59,66 +105,86 @@ function PatientOverview({ patient, loading, onViewFullRecord }) {
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Patient Overview</h2>
-        {/* Clear button to go back to empty state */}
         <button
-          onClick={() => window.location.reload()}  // Temporary - will be improved
-          className="text-xs text-gray-500 hover:text-gray-700"
+          onClick={handleClearPatient}
+          className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
           title="Clear patient view"
         >
-          ✕ Clear
+          <CloseIcon className="w-3 h-3" />
+          Clear
         </button>
       </div>
       
       {/* Patient Header */}
       <div className="flex items-start gap-4 mb-6 pb-6 border-b border-gray-200">
         <div className="w-16 h-16 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
-          {patient.photo ? (
+          {currentPatient.photo ? (
             <img 
-              src={patient.photo} 
-              alt={patient.name}
+              src={currentPatient.photo} 
+              alt={currentPatient.name}
               className="w-full h-full object-cover"
             />
           ) : (
             <span className="text-2xl font-bold text-gray-400">
-              {patient.name?.charAt(0) || '?'}
+              {currentPatient.name?.charAt(0) || '?'}
             </span>
           )}
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-semibold text-gray-900 mb-1">
-            {patient.name}
-            {patient.age && <span className="text-gray-600 font-normal">, Age: {patient.age}</span>}
+            {currentPatient.name || 'Unknown Patient'}
+            {currentPatient.age && (
+              <span className="text-gray-600 font-normal">, Age: {currentPatient.age}</span>
+            )}
           </h3>
-          {patient.condition && (
-            <p className="text-sm text-gray-600 mb-1">Condition: {patient.condition}</p>
+          {currentPatient.condition && (
+            <p className="text-sm text-gray-600 mb-1">
+              <span className="font-medium">Condition:</span> {currentPatient.condition}
+            </p>
           )}
-          {patient.lastVisit && (
-            <p className="text-xs text-gray-500">Last Visit: {patient.lastVisit}</p>
+          {currentPatient.lastVisit && (
+            <p className="text-xs text-gray-500">
+              Last Visit: {formatDate(currentPatient.lastVisit)}
+            </p>
           )}
         </div>
       </div>
 
       {/* Medications & Allergies */}
       <div className="mb-6 space-y-3">
-        {(patient.medications && patient.medications.length > 0) && (
+        {/* Medications */}
+        {currentPatient.medications && currentPatient.medications.length > 0 && (
           <div className="flex items-start gap-2">
-            <Pill className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+            <Pill className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <span className="text-xs font-semibold text-gray-700 block mb-1">Medications:</span>
-              <span className="text-sm text-gray-600">{patient.medications.join(', ')}</span>
+              <span className="text-sm text-gray-600">
+                {Array.isArray(currentPatient.medications) 
+                  ? currentPatient.medications.join(', ')
+                  : currentPatient.medications}
+              </span>
             </div>
           </div>
         )}
-        {(patient.allergies && patient.allergies.length > 0) && (
+
+        {/* Allergies */}
+        {currentPatient.allergies && currentPatient.allergies.length > 0 && (
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <span className="text-xs font-semibold text-gray-700 block mb-1">Allergies:</span>
-              <span className="text-sm text-red-600 font-medium">{patient.allergies.join(', ')}</span>
+              <span className="text-sm text-red-600 font-medium">
+                {Array.isArray(currentPatient.allergies)
+                  ? currentPatient.allergies.join(', ')
+                  : currentPatient.allergies}
+              </span>
             </div>
           </div>
         )}
-        {(!patient.medications || patient.medications.length === 0) && (!patient.allergies || patient.allergies.length === 0) && (
+
+        {/* No medications or allergies */}
+        {(!currentPatient.medications || currentPatient.medications.length === 0) && 
+         (!currentPatient.allergies || currentPatient.allergies.length === 0) && (
           <p className="text-sm text-gray-500 italic text-center py-4">
             No medications or allergies recorded
           </p>
@@ -127,13 +193,35 @@ function PatientOverview({ patient, loading, onViewFullRecord }) {
 
       {/* View Full Record Button */}
       <button 
-        onClick={() => onViewFullRecord && onViewFullRecord(patient.id)}
+        onClick={() => onViewFullRecord && onViewFullRecord(currentPatient.id)}
         className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2.5 px-4 rounded-lg transition-colors"
       >
-        View Full Record
+        View Full Medical Record
       </button>
     </div>
   );
+}
+
+// Helper function to format date
+function formatDate(dateValue) {
+  if (!dateValue) return 'Never';
+  try {
+    if (Array.isArray(dateValue)) {
+      const [year, month, day] = dateValue;
+      return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+    return new Date(dateValue).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch {
+    return 'Unknown';
+  }
 }
 
 export default PatientOverview;

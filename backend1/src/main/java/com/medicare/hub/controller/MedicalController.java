@@ -99,6 +99,9 @@ public class MedicalController {
                     medicalRecord.setDescription(params.get("description"));
                     medicalRecord.setDetails(params.get("details"));
                     medicalRecord.setCategory("Medical Record");
+                    medicalRecord.setPatientCondition(params.get("condition"));
+                    medicalRecord.setMedications(params.get("medications"));
+                    medicalRecord.setAllergies(params.get("allergies"));
                     medicalRecord.setCreatedAt(LocalDateTime.now());
 
                     if (params.get("recordDate") != null) {

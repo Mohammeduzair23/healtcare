@@ -24,8 +24,8 @@ function DashboardCards({
   labResultsCount, 
   prescriptionsCount,
   appointmentsCount = 0,
+  notificationsCount = 0,
   onNavigate,
-  onNotification,
   onRequestAppointment
 }) {
   return (
@@ -83,11 +83,11 @@ function DashboardCards({
         />  
         <DashboardCard
           icon={<Bell className="w-8 h-8 text-blue-600" />}
-          title="Upcoming Reminders"
-          count={0}
-          label="Reminders"
-          onClick={() => onNotification('info', 'Reminders feature coming soon!')}
-        />   
+          title="Notifications"
+          count={notificationsCount}
+          label="Updates"
+          onClick={() => onNavigate('notifications')}
+        />  
       </div>
     </>
   );

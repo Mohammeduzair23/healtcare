@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Pill, TestTube, Calendar } from 'lucide-react';
+import { FileText, Pill, TestTube, Calendar, User, Bell } from 'lucide-react';
 
 // Import components
 import DashboardLayout from '../components/dashboard/DashboardLayout';
@@ -9,6 +9,8 @@ import UnifiedRecordCard from '../components/dashboard/UnifiedRecordCard';
 import RecordSection from '../components/dashboard/RecordSection';
 import AppointmentCard from '../components/dashboard/AppointmentCard';
 import Notification from '../components/common/Notification';
+import ProfileModal from '../components/dashboard/ProfileModal';
+import PatientNotifications from '../components/dashboard/PatientNotifications';
 
 // Import UNIFIED modal with constants
 import UnifiedRecordModal, { RECORD_TYPES, MODES } from '../components/dashboard/UnifiedRecordModal';
@@ -28,6 +30,8 @@ function PatientDashboard() {
   const [notification, setNotification] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [notificationsCount, setNotificationsCount] = useState(0);
   
   // Single unified modal state
   const [modalConfig, setModalConfig] = useState({
@@ -105,7 +109,24 @@ function PatientDashboard() {
 
     setUserData(user);
     fetchPatientData(user.id);
+    fetchNotificationsCount(user.id);
   }, [navigate]);
+
+  // ============================================
+  // FETCH NOTIFICATIONS COUNT
+  // ============================================
+  const fetchNotificationsCount = async (patientId) => {
+    try {
+      const response = await fetch(`${API_URL}/patient/${patientId}/notifications`);
+      const result = await response.json();
+
+      if (result.success) {
+        setNotificationsCount(result.unreadCount || 0);
+      }
+    } catch (err) {
+      console.error('⚠️ Error fetching notifications count:', err);
+    }
+  };
 
   // ============================================
   // FETCH DATA
@@ -209,6 +230,7 @@ function PatientDashboard() {
   const handleSuccess = (message) => {
     showNotification('success', message);
     fetchPatientData(userData.id);
+    fetchNotificationsCount(userData.id);
     closeModal();
   };
 
@@ -235,7 +257,7 @@ function PatientDashboard() {
       });
 
       const result = await response.json();
-      console.log('📥 Delete response:', result);
+      console.log('🔥 Delete response:', result);
 
       if (response.ok && result.success) {
         const recordTypeName = type === 'medical' ? 'Medical record' :
@@ -279,6 +301,17 @@ function PatientDashboard() {
   // ============================================
   return (
     <DashboardLayout userData={userData} onLogout={handleLogout}>
+
+      <div className="mb-4 flex justify-end">
+        <button 
+          onClick={() => setShowProfileModal(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
+        >
+          <User className="w-4 h-4" />
+          <span className="font-medium">Edit Profile</span>
+        </button>
+      </div>
+
       {/* Notification */}
       {notification && (
         <Notification
@@ -295,8 +328,8 @@ function PatientDashboard() {
           appointmentsCount={appointments.length}
           prescriptionsCount={prescriptions.length}
           labResultsCount={labResults.length}
+          notificationsCount={notificationsCount}
           onNavigate={setActiveSection}
-          onNotification={showNotification}
           onRequestAppointment={() => setShowAppointmentModal(true)}
         />
       )}
@@ -387,6 +420,23 @@ function PatientDashboard() {
         />
       )}
 
+      {/* Notifications Section - NEW */}
+      {activeSection === 'notifications' && (
+        <div>
+          <button
+            onClick={() => setActiveSection('dashboard')}
+            className="mb-6 flex items-center text-gray-600 hover:text-gray-800 transition"
+          >
+            <span className="mr-2">←</span> Back to Dashboard
+          </button>
+          
+          <PatientNotifications 
+            patientId={userData?.id} 
+            showAsDropdown={false}
+          />
+        </div>
+      )}
+
       {/* SINGLE UNIFIED MODAL */}
       <UnifiedRecordModal
         show={modalConfig.show}
@@ -399,6 +449,7 @@ function PatientDashboard() {
         onSuccess={handleSuccess}
         onError={handleError}
       />
+      
       {/* APPOINTMENT REQUEST MODAL */}
       <AppointmentRequestModal
         show={showAppointmentModal}
@@ -406,6 +457,22 @@ function PatientDashboard() {
         onClose={() => setShowAppointmentModal(false)}
         onSuccess={handleSuccess}
         onError={handleError}
+      />
+      
+      {/* PROFILE MODAL */}
+      <ProfileModal
+        show={showProfileModal}
+        userId={userData?.id}
+        onClose={() => setShowProfileModal(false)}
+        onSuccess={(msg) => {
+          showNotification('success', msg);
+          // Refresh user data if needed
+          const updatedData = sessionStorage.getItem('userData');
+          if (updatedData) {
+            setUserData(JSON.parse(updatedData));
+          }
+        }}
+        onError={(msg) => showNotification('error', msg)}
       />
     </DashboardLayout>
   );
