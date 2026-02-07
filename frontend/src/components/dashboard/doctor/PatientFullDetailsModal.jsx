@@ -18,6 +18,7 @@ function PatientFullDetailsModal({ show, doctorId, patientId, onClose }) {
     setLoading(true);
     try {
       const response = await fetch(`${API_URL}/doctor/${doctorId}/patient/${patientId}/full-details`);
+      //const response = await fetch(`${API_URL}/doctor/${doctorId}/patient/${patientId}/full-details`);
       const result = await response.json();
       
       if (result.success) {
@@ -106,7 +107,7 @@ function PatientFullDetailsModal({ show, doctorId, patientId, onClose }) {
                   <TestTube className="w-4 h-4" />
                   Lab Results ({patientData?.labResultsCount || 0})
                 </button>
-                <button
+                {/*<button
                   onClick={() => setActiveTab('appointments')}
                   className={`py-3 px-4 border-b-2 font-medium transition flex items-center gap-2 ${
                     activeTab === 'appointments'
@@ -116,7 +117,7 @@ function PatientFullDetailsModal({ show, doctorId, patientId, onClose }) {
                 >
                   <Calendar className="w-4 h-4" />
                   Appointments ({patientData?.appointmentsCount || 0})
-                </button>
+                </button>*/}
               </div>
             </div>
 
@@ -129,8 +130,8 @@ function PatientFullDetailsModal({ show, doctorId, patientId, onClose }) {
                     <h4 className="font-semibold text-lg mb-4">Basic Information</h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-gray-600">Patient ID</p>
-                        <p className="font-medium">{patientData?.id}</p>
+                        <p className="text-sm text-gray-600">Patient Name</p>
+                        <p className="font-medium">{patientData?.name}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Email</p>
@@ -261,7 +262,7 @@ function PatientFullDetailsModal({ show, doctorId, patientId, onClose }) {
                 </div>
               )}
 
-              {activeTab === 'appointments' && (
+              {/*{activeTab === 'appointments' && (
                 <div className="space-y-4">
                   {patientData?.appointments && patientData.appointments.length > 0 ? (
                     patientData.appointments.map((appointment) => (
@@ -288,7 +289,7 @@ function PatientFullDetailsModal({ show, doctorId, patientId, onClose }) {
                     <p className="text-gray-500 text-center py-8">No appointments found</p>
                   )}
                 </div>
-              )}
+              )}*/}
             </div>
 
             {/* Footer */}

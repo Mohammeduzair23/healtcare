@@ -5,6 +5,7 @@ import { Users, Calendar, TestTube, ClipboardList } from 'lucide-react';
 // Import reusable components
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import Notification from '../components/common/Notification';
+import ProfileModal from '../components/dashboard/ProfileModal';
 
 // Import doctor-specific components
 import DoctorStatsCards from '../components/dashboard/doctor/DoctorStatsCards';
@@ -22,6 +23,7 @@ function DoctorDashboard() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Doctor-specific data states
   const [todayAppointments, setTodayAppointments] = useState([]);
@@ -196,7 +198,7 @@ function DoctorDashboard() {
   };
 
   // ============================================
-  // NEW: MARK APPOINTMENT AS COMPLETED
+  // MARK APPOINTMENT AS COMPLETED
   // ============================================
   const handleMarkComplete = async (appointmentId) => {
     console.log('✓ Marking appointment as completed:', appointmentId);
@@ -267,7 +269,11 @@ function DoctorDashboard() {
   // RENDER
   // ============================================
   return (
-    <DashboardLayout userData={userData} onLogout={handleLogout}>
+    <DashboardLayout 
+      userData={userData} 
+      onLogout={handleLogout}
+      onOpenProfile={() => setShowProfileModal(true)}
+    >
       {/* Notification */}
       {notification && (
         <Notification
@@ -308,9 +314,7 @@ function DoctorDashboard() {
 
         {/* Middle Column - 1/3 width */}
         <div className="lg:col-span-1">
-          {/* FIXED: Pass onViewFullRecord prop */}
           <PatientOverview 
-            //patient={currentPatient}
             loading={loading}
             onViewFullRecord={handleViewFullRecord}
             doctorId={userData.id}
@@ -332,6 +336,23 @@ function DoctorDashboard() {
         doctorId={userData?.id}
         patientId={selectedPatientId}
         onClose={() => setShowFullDetailsModal(false)}
+      />
+
+      {/* PROFILE MODAL */}
+      <ProfileModal
+        show={showProfileModal}
+        userId={userData?.id}
+        userRole={userData?.role}
+        onClose={() => setShowProfileModal(false)}
+        onSuccess={(msg) => {
+          showNotification('success', msg);
+          // Refresh user data
+          const updatedData = sessionStorage.getItem('userData');
+          if (updatedData) {
+            setUserData(JSON.parse(updatedData));
+          }
+        }}
+        onError={(msg) => showNotification('error', msg)}
       />
     </DashboardLayout>
   );

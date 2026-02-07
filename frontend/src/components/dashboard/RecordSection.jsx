@@ -11,6 +11,13 @@ function RecordSection({
   renderRecord
 }) {
   return (
+    <div>
+      <button
+        onClick={onBack}
+        className="mb-6 text-blue-600 hover:text-blue-700 font-medium"
+      >
+        <span className="mt-2">← Back to Dashboard</span>
+      </button>
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-2xl font-bold text-gray-800">{title}</h3>
@@ -19,7 +26,7 @@ function RecordSection({
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center space-x-2"
         >
           <Upload className="w-4 h-4" />
-          <span>Add {title}</span>
+          <span>{title === 'My Appointments' ? 'Book Appointment' : `Add ${title}`}</span>
         </button>
       </div>
 
@@ -39,13 +46,8 @@ function RecordSection({
           <p className="text-gray-400 text-sm mt-2">Click "Add {title}" to upload your first record</p>
         </div>
       )}
-
-      <button
-        onClick={onBack}
-        className="mt-6 text-blue-600 hover:text-blue-700 font-medium"
-      >
-        ← Back to Dashboard
-      </button>
+        {/* Old back to dashboard button*/}
+    </div>
     </div>
   );
 }

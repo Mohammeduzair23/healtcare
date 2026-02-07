@@ -40,7 +40,7 @@ function DashboardCards({
         </p>
       </div>
 
-      {/* REQUEST APPOINTMENT BUTTON - PROMINENT PLACEMENT */}
+      {/* REQUEST APPOINTMENT BUTTON - PROMINENT PLACEMENT 
       <div className="mb-8 flex justify-end">
         <button
           onClick={onRequestAppointment}
@@ -49,7 +49,7 @@ function DashboardCards({
           <Calendar className="w-5 h-5" />
           Book Appointment
         </button>
-      </div>
+      </div> */}
 
       {/* DASHBOARD CARDS */}
       <div className="grid md:grid-cols-2 gap-6">

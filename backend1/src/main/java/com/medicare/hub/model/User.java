@@ -38,17 +38,8 @@ public class User {
     @Column(name = "age")
     private Integer age;
 
-    /*@Column(name = "condition", columnDefinition = "TEXT")
-    private String condition;
-
-    @Column(name = "last_visit")
-    private LocalDate lastVisit;
-
-    @Column(name = "medications", columnDefinition = "TEXT")
-    private String medications;  // JSON: "[\"Med1\",\"Med2\"]"
-
-    @Column(name = "allergies", columnDefinition = "TEXT")
-    private String allergies;*/
+    @Column(name = "hospital_name")
+    private String hospitalName;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -58,5 +49,17 @@ public class User {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
+    }
+
+    @Transient
+    public boolean isProfileComplete() {
+        if (name == null || age == null || gender == null || dateOfBirth == null) {
+            return false;
+        }
+        // For doctor also check hospital name
+        if ("Doctor".equalsIgnoreCase(role)) {
+            return hospitalName != null && !hospitalName.trim().isEmpty();
+        }
+        return true;
     }
 }

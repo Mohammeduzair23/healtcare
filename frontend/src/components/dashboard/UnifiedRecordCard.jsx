@@ -19,12 +19,18 @@ const CARD_CONFIGS = {
     files: [],
     displayFields: [
       { key: 'hospital', label: 'Hospital Name'},
+      { key: 'patientName', label: 'Patient Name'},
+      { key: 'patientAge', label: 'Age'},
       { key: 'doctorName', label: 'Doctor' },
       { key: 'recordType', label: 'Record Type' },
+      { key: 'patientCondition', label: 'Patient Condition'},
+      { key: 'medications', label: 'Medications'},
+      { key: 'allergies', label: 'Allergies'},
       { key: 'description', label: 'Description' },
       { key: 'details', label: 'Details' },
       { key: 'softcopyPath', label: 'View Medical Report', isFile: true, hoverColor: 'hover:text-green-700' },
-      { key: 'prescriptionPath', label: 'View Prescription', isFile: true }
+      { key: 'prescriptionPath', label: 'View Prescription', isFile: true },
+      { key: 'lastVisit', label: 'Last Visit'}
     ]
   },
   

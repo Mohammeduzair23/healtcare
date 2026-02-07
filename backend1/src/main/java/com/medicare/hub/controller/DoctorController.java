@@ -191,7 +191,7 @@ public class DoctorController {
     // ============================================
     // PATIENT OVERVIEW (SIMPLIFIED - FROM HEALTH DATA)
     // ============================================
-
+    /*
     @GetMapping("/{doctorId}/patient/{patientId}/overview")
     public ResponseEntity<?> getPatientOverview(
             @PathVariable String doctorId,
@@ -211,6 +211,7 @@ public class DoctorController {
             Map<String, Object> overview = new HashMap<>();
             overview.put("name", patient.getName());
             overview.put("id", patient.getId());
+            overview.put("", patient.getAge());
 
             // Get from patient_health_data table
             Optional<PatientHealthData> healthDataOpt = patientHealthDataRepository.findByPatientId(patientId);
@@ -248,7 +249,7 @@ public class DoctorController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to fetch patient overview"));
         }
-    }
+    }*/
 
     private List<String> stringToList(String input) {
         if (input == null || input.isEmpty()) {
@@ -288,6 +289,8 @@ public class DoctorController {
             fullDetails.put("id", patient.getId());
             fullDetails.put("name", patient.getName());
             fullDetails.put("email", patient.getEmail());
+            fullDetails.put("age", patient.getAge());
+            //fullDetails.put("lastVisit", );
 
             // Health data
             patientHealthDataRepository.findByPatientId(patientId).ifPresent(healthData -> {

@@ -300,17 +300,11 @@ function PatientDashboard() {
   // RENDER
   // ============================================
   return (
-    <DashboardLayout userData={userData} onLogout={handleLogout}>
-
-      <div className="mb-4 flex justify-end">
-        <button 
-          onClick={() => setShowProfileModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
-        >
-          <User className="w-4 h-4" />
-          <span className="font-medium">Edit Profile</span>
-        </button>
-      </div>
+    <DashboardLayout 
+      userData={userData} 
+      onLogout={handleLogout}
+      onOpenProfile={() => setShowProfileModal(true)}
+    >
 
       {/* Notification */}
       {notification && (
@@ -463,6 +457,7 @@ function PatientDashboard() {
       <ProfileModal
         show={showProfileModal}
         userId={userData?.id}
+        userRole={userData?.role}
         onClose={() => setShowProfileModal(false)}
         onSuccess={(msg) => {
           showNotification('success', msg);
